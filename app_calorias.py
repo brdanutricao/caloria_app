@@ -1593,8 +1593,6 @@ with aba_follow:
                 img = storage_public_url("guides", "example_male.jpeg")   or local_img_path("example_male")
         
             _show_image(img, caption="Exemplo: frente • perfil • costas")
-            else:
-                st.warning("Imagem de exemplo não encontrada.")
 
         # -------- Upload e listagem de fotos (também DENTRO da aba_follow) --------
         files = st.file_uploader(
@@ -1886,6 +1884,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
