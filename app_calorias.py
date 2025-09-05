@@ -32,6 +32,32 @@ def get_supabase_client() -> Client:
 
 supabase = get_supabase_client()
 
+from pathlib import Path
+ASSETS_DIR = Path(__file__).parent / "assets"
+
+def storage_public_url(bucket: str, path: str | None) -> str | None:
+    """Sempre retorna string (URL) ou None."""
+    if not path:
+        return None
+    try:
+        res = supabase.storage.from_(bucket).get_public_url(path)
+        if isinstance(res, dict):
+            data = res.get("data") or {}
+            return data.get("publicUrl") or data.get("public_url")
+        if isinstance(res, str):
+            return res
+    except Exception:
+        pass
+    return None
+
+def local_img_path(basename: str, exts=(".jpg", ".jpeg", ".png")) -> str | None:
+    """Fallback local para assets/"""
+    for ext in exts:
+        p = ASSETS_DIR / f"{basename}{ext}"
+        if p.exists():
+            return str(p)
+    return None
+
 # === Onboarding (wizard) - helpers ===
 import math
 from datetime import date
@@ -1429,34 +1455,31 @@ with aba_follow:
             st.warning(f"Não foi possível listar: {e}")
 
         # ===== MEDIDAS =====
-        st.divider()
-        st.subheader("📏 Medidas corporais")
+st.divider()
+st.subheader("📏 Medidas corporais")
 
-        st.write("DEBUG IMG:", img, type(img))
-        if isinstance(img, str):
-            st.image(img, use_container_width=True)
-        else:
-            st.warning("URL da imagem inválida")
-                
-        with st.expander("Orientações e exemplos"):
-            st.markdown(
-                "**Use fita métrica apertando levemente na pele, nas posições indicadas na imagem.**\n\n"
-                "Repita o processo **semanalmente** ou a cada **15 dias** para comparar."
-            )
-            # Masc x Fem
-            sexo_ref = st.radio("Ver exemplo para:", ["Masculino", "Feminino"], horizontal=True)
+with st.expander("Orientações e exemplos"):
+    st.markdown(
+        "**Use fita métrica apertando levemente na pele, nas posições indicadas na imagem.**\n\n"
+        "Repita o processo **semanalmente** ou a cada **15 dias** para comparar."
+    )
 
-            if sexo_ref == "Masculino":
-                path_male = "measure_male.jpg"   # <- nome EXATO como está no bucket
-                img = storage_public_url("guides", path_male) or local_img_path("measure_male")
-            else:
-                path_fem  = "measure_female.jpeg"  # <- nome EXATO como está no bucket
-                img = storage_public_url("guides", path_fem) or local_img_path("measure_female")
+    sexo_ref = st.radio("Ver exemplo para:", ["Masculino", "Feminino"], horizontal=True)
 
-            if img:
-                st.image(img, use_container_width=True)
-            else:
-                st.warning("Imagem não encontrada no Storage nem em assets/.")
+    if sexo_ref == "Masculino":
+        path_male = "measure_male.jpg"        # nome exato no bucket
+        img = storage_public_url("guides", path_male) or local_img_path("measure_male")
+    else:
+        path_fem  = "measure_female.jpeg"     # nome exato no bucket
+        img = storage_public_url("guides", path_fem)  or local_img_path("measure_female")
+
+    # (opcional) debug, agora que 'img' já existe
+    # st.write("DEBUG IMG:", img, type(img))
+
+    if isinstance(img, str) and img:
+        st.image(img, use_container_width=True)
+    else:
+        st.warning("Imagem não encontrada no Storage nem em assets/.")
 
         # formulário de medidas
         with st.form("measure_form"):
@@ -1570,20 +1593,24 @@ with aba_follow:
 
         st.divider()
         st.subheader("📸 Fotos de progresso (1x/mês)")
-
+        
         with st.expander("Orientações e exemplos"):
             st.markdown(
                 "**Tente tirar as fotos sempre no mesmo local, com a mesma iluminação e roupa, para melhor comparação.**\n\n"
                 "Atualize as fotos e medidas a cada **15 ou 30 dias**."
             )
+        
             sexo_exemplo = st.radio("Ver exemplo para:", ["Feminino", "Masculino"], horizontal=True)
-
+        
             if sexo_exemplo == "Feminino":
                 img = storage_public_url("guides", "example_female.jpeg") or local_img_path("example_female")
             else:
                 img = storage_public_url("guides", "example_male.jpeg")   or local_img_path("example_male")
-
-            if img:
+        
+            # (opcional) debug depois que 'img' existe
+            # st.write("DEBUG IMG:", img, type(img))
+        
+            if isinstance(img, str) and img:
                 st.image(img, caption="Exemplo: frente • perfil • costas", use_container_width=True)
             else:
                 st.warning("Imagem de exemplo não encontrada.")
@@ -1877,6 +1904,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
