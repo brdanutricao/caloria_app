@@ -4,6 +4,8 @@
 # - Seleciona objetivo (cut/manutenção/bulk) com ajuste automático de calorias
 # - Macros por g/kg ou por %
 # - Exporta PDF simples com o plano diário (usa reportlab se disponível)
+# _TEST = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg"
+# st.image(_TEST)
 
 import io
 from datetime import datetime, date
@@ -33,17 +35,23 @@ def get_supabase_client() -> Client:
 supabase = get_supabase_client()
 
 from pathlib import Path
+
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 def storage_public_url(bucket: str, path: str | None) -> str | None:
-    """Sempre retorna string (URL) ou None."""
+    """Retorna a URL pública (string) ou None, independente do formato do SDK."""
     if not path:
         return None
     try:
         res = supabase.storage.from_(bucket).get_public_url(path)
+        # v2 geralmente retorna dict {"data": {"publicUrl": "..."}}
         if isinstance(res, dict):
             data = res.get("data") or {}
-            return data.get("publicUrl") or data.get("public_url")
+            # cobre variações de chave
+            for k in ("publicUrl", "public_url", "publicURL", "signedUrl", "signedURL", "signed_url"):
+                if data.get(k):
+                    return data[k]
+        # fallback: algumas versões retornam str
         if isinstance(res, str):
             return res
     except Exception:
@@ -51,12 +59,23 @@ def storage_public_url(bucket: str, path: str | None) -> str | None:
     return None
 
 def local_img_path(basename: str, exts=(".jpg", ".jpeg", ".png")) -> str | None:
-    """Fallback local para assets/"""
+    """Fallback local (apenas funciona no ambiente local, não no Cloud)."""
     for ext in exts:
         p = ASSETS_DIR / f"{basename}{ext}"
         if p.exists():
             return str(p)
     return None
+
+def _show_image(url: str | None, caption: str | None = None):
+    """Blinda o st.image e loga o tipo/valor quando está inválido."""
+    if isinstance(url, str) and url:
+        try:
+            st.image(url, caption=caption, use_container_width=True)
+            return
+        except Exception as e:
+            st.warning(f"Falha ao renderizar imagem (valor={repr(url)[:120]}).")
+    else:
+        st.info("DEBUG: URL da imagem inválida → " + repr(url))
 
 # === Onboarding (wizard) - helpers ===
 import math
@@ -1455,33 +1474,25 @@ with aba_follow:
             st.warning(f"Não foi possível listar: {e}")
 
         # ===== MEDIDAS =====
-st.divider()
-st.subheader("📏 Medidas corporais")
-
-with st.expander("Orientações e exemplos"):
-    st.markdown(
-        "**Use fita métrica apertando levemente na pele, nas posições indicadas na imagem.**\n\n"
-        "Repita o processo **semanalmente** ou a cada **15 dias** para comparar."
-    )
-
-    sexo_ref = st.radio("Ver exemplo para:", ["Masculino", "Feminino"], horizontal=True)
-
-    if sexo_ref == "Masculino":
-        path_male = "measure_male.jpg"        # nome exato no bucket
-        img = storage_public_url("guides", path_male) or local_img_path("measure_male")
-    else:
-        path_fem  = "measure_female.jpeg"     # nome exato no bucket
-        img = storage_public_url("guides", path_fem)  or local_img_path("measure_female")
-
-    # (opcional) debug, agora que 'img' já existe
-    # st.write("DEBUG IMG:", img, type(img))
-
-    if isinstance(img, str) and img:
-        st.image(img, use_container_width=True)
-    else:
-        st.warning("Imagem não encontrada no Storage nem em assets/.")
-
-        # formulário de medidas
+        st.divider()
+        st.subheader("📏 Medidas corporais")
+        
+        with st.expander("Orientações e exemplos", expanded=True):
+            st.markdown(
+                "**Use fita métrica apertando levemente na pele, nas posições indicadas na imagem.**\n\n"
+                "Repita o processo **semanalmente** ou a cada **15 dias** para comparar."
+            )
+        
+            sexo_ref = st.radio("Ver exemplo para:", ["Masculino", "Feminino"], horizontal=True)
+        
+            if sexo_ref == "Masculino":
+                img = storage_public_url("guides", "measure_male.jpg") or local_img_path("measure_male")
+            else:
+                img = storage_public_url("guides", "measure_female.jpeg") or local_img_path("measure_female")
+        
+            _show_image(img)
+        
+        # === Formulário de medidas (fora do else, sempre visível) ===
         with st.form("measure_form"):
             colA, colB, colC = st.columns(3)
             with colA:
@@ -1496,9 +1507,9 @@ with st.expander("Orientações e exemplos"):
                 thigh_cm = st.number_input("Coxa (cm)", min_value=0.0, step=0.1)
                 calf_cm = st.number_input("Panturrilha (cm)", min_value=0.0, step=0.1)
                 st.caption("Padronize o lado (ex.: sempre o direito).")
-
+        
             save_meas = st.form_submit_button("💾 Salvar medidas")
-
+        
         if save_meas:
             try:
                 supabase.table("measurements").insert(
@@ -1517,8 +1528,8 @@ with st.expander("Orientações e exemplos"):
                 st.success("Medidas salvas!")
             except Exception as e:
                 st.error(f"Erro ao salvar medidas: {e}")
-
-        # listagem + deltas
+        
+        # === Listagem + deltas ===
         st.markdown("### Suas últimas medidas")
         try:
             resp = (
@@ -1534,42 +1545,17 @@ with st.expander("Orientações e exemplos"):
                 st.caption("Ainda não há medições registradas.")
             else:
                 import pandas as pd
-
                 dfm = pd.DataFrame(ms)
                 dfm["ref_date"] = pd.to_datetime(dfm["ref_date"]).dt.date
                 dfm = dfm.sort_values("ref_date")
-
-                for col in [
-                    "chest_cm",
-                    "arm_cm",
-                    "waist_cm",
-                    "abdomen_cm",
-                    "hip_cm",
-                    "thigh_cm",
-                    "calf_cm",
-                ]:
+                for col in ["chest_cm","arm_cm","waist_cm","abdomen_cm","hip_cm","thigh_cm","calf_cm"]:
                     if col in dfm.columns:
                         dfm[f"Δ {col.replace('_cm','')}"] = dfm[col].diff().round(1)
-
                 dfm = dfm.sort_values("ref_date", ascending=False)
-                cols_show = [
-                    "ref_date",
-                    "chest_cm",
-                    "arm_cm",
-                    "waist_cm",
-                    "abdomen_cm",
-                    "hip_cm",
-                    "thigh_cm",
-                    "calf_cm",
-                    "Δ chest",
-                    "Δ arm",
-                    "Δ waist",
-                    "Δ abdomen",
-                    "Δ hip",
-                    "Δ thigh",
-                    "Δ calf",
-                ]
-                cols_show = [c for c in cols_show if c in dfm.columns]
+                cols_show = [c for c in [
+                    "ref_date","chest_cm","arm_cm","waist_cm","abdomen_cm","hip_cm","thigh_cm","calf_cm",
+                    "Δ chest","Δ arm","Δ waist","Δ abdomen","Δ hip","Δ thigh","Δ calf"
+                ] if c in dfm.columns]
                 st.dataframe(dfm[cols_show], use_container_width=True)
         except Exception as e:
             st.warning(f"Não foi possível listar medidas: {e}")
@@ -1904,6 +1890,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
