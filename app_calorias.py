@@ -1433,10 +1433,10 @@ with aba_follow:
         st.subheader("📏 Medidas corporais")
 
         st.write("DEBUG IMG:", img, type(img))
-            if isinstance(img, str):
-                st.image(img, use_container_width=True)
-            else:
-                st.warning("URL da imagem inválida")
+        if isinstance(img, str):
+            st.image(img, use_container_width=True)
+        else:
+            st.warning("URL da imagem inválida")
                 
         with st.expander("Orientações e exemplos"):
             st.markdown(
@@ -1877,6 +1877,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
