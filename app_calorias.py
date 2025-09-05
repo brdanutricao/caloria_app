@@ -299,15 +299,30 @@ def storage_public_url(bucket: str, path: str | None) -> str | None:
     if not path:
         return None
     try:
-        return supabase.storage.from_(bucket).get_public_url(path)
+        res = supabase.storage.from_(bucket).get_public_url(path)
+        # supabase-py v2 retorna dict {"data": {"publicUrl": "..."}}
+        if isinstance(res, dict):
+            data = res.get("data") or {}
+            return data.get("publicUrl") or data.get("public_url")
+        # (em versões antigas podia vir str direto)
+        if isinstance(res, str):
+            return res
     except Exception:
-        return None
+        pass
+    return None
 
-def local_img_path(basename: str, exts=(".jpg", ".jpeg", ".png")) -> str | None:
-    for ext in exts:
-        p = ASSETS_DIR / f"{basename}{ext}"
-        if p.exists():
-            return str(p)
+def signed_url(bucket: str, path: str, expires_sec: int = 3600) -> str | None:
+    """Para buckets privados: gera URL temporária."""
+    try:
+        res = supabase.storage.from_(bucket).create_signed_url(path, expires_sec)
+        # supabase-py v2 retorna dict {"data": {"signedUrl": "..."}}
+        if isinstance(res, dict):
+            data = res.get("data") or {}
+            return data.get("signedUrl") or data.get("signedURL") or data.get("signed_url")
+        if isinstance(res, str):
+            return res
+    except Exception:
+        pass
     return None
 
 import json, re, requests
@@ -431,9 +446,31 @@ def storage_public_url(bucket: str, path: str | None) -> str | None:
     if not path:
         return None
     try:
-        return supabase.storage.from_(bucket).get_public_url(path)
+        res = supabase.storage.from_(bucket).get_public_url(path)
+        # supabase-py v2 retorna dict {"data": {"publicUrl": "..."}}
+        if isinstance(res, dict):
+            data = res.get("data") or {}
+            return data.get("publicUrl") or data.get("public_url")
+        # (em versões antigas podia vir str direto)
+        if isinstance(res, str):
+            return res
     except Exception:
-        return None
+        pass
+    return None
+
+def signed_url(bucket: str, path: str, expires_sec: int = 3600) -> str | None:
+    """Para buckets privados: gera URL temporária."""
+    try:
+        res = supabase.storage.from_(bucket).create_signed_url(path, expires_sec)
+        # supabase-py v2 retorna dict {"data": {"signedUrl": "..."}}
+        if isinstance(res, dict):
+            data = res.get("data") or {}
+            return data.get("signedUrl") or data.get("signedURL") or data.get("signed_url")
+        if isinstance(res, str):
+            return res
+    except Exception:
+        pass
+    return None
 
 def storage_try_extensions(bucket: str, basename: str, exts=(".jpeg", ".jpg", ".png")) -> str | None:
     """Tenta basename + extensão no bucket e retorna a 1ª URL pública encontrada."""
@@ -1834,3 +1871,4 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
