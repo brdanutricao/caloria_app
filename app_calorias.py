@@ -4,8 +4,6 @@
 # - Seleciona objetivo (cut/manutenção/bulk) com ajuste automático de calorias
 # - Macros por g/kg ou por %
 # - Exporta PDF simples com o plano diário (usa reportlab se disponível)
-# _TEST = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg"
-# st.image(_TEST)
 
 import io
 from datetime import datetime, date
@@ -1263,8 +1261,9 @@ with aba_diario:
                         url = signed.get("signedURL") or signed.get("signed_url")
                         if url:
                             with cols[i % 3]:
-                                st.image(url, use_container_width=True)
+                                _show_image(url)
                                 st.caption(f"{r['meal_type']} — {r['created_at'][:16]}")
+
                     except Exception as e:
                         st.warning(
                             f"Não foi possível exibir a foto de {r.get('meal_type','?')}: {e}"
@@ -1593,11 +1592,7 @@ with aba_follow:
             else:
                 img = storage_public_url("guides", "example_male.jpeg")   or local_img_path("example_male")
         
-            # (opcional) debug depois que 'img' existe
-            # st.write("DEBUG IMG:", img, type(img))
-        
-            if isinstance(img, str) and img:
-                st.image(img, caption="Exemplo: frente • perfil • costas", use_container_width=True)
+            _show_image(img, caption="Exemplo: frente • perfil • costas")
             else:
                 st.warning("Imagem de exemplo não encontrada.")
 
@@ -1653,8 +1648,9 @@ with aba_follow:
                         url = signed.get("signedURL") or signed.get("signed_url")
                         if url:
                             with cols[i % 3]:
-                                st.image(url, use_container_width=True)
+                                _show_image(url)
                                 st.caption(item["name"])
+
         except Exception as e:
             st.warning(f"Não foi possível listar as fotos: {e}")
 
@@ -1890,6 +1886,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
