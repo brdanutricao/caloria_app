@@ -1203,12 +1203,6 @@ with aba_diario:
             )
             st.dataframe(show_df, use_container_width=True)
 
-            st.write("DEBUG IMG:", img, type(img))
-            if isinstance(img, str):
-                st.image(img, use_container_width=True)
-            else:
-                st.warning("URL da imagem inválida")
-
             # Fotos
             st.markdown("#### Fotos das refeições do dia")
             thumbs = [r for r in rows if r.get("photo_path")]
@@ -1438,6 +1432,12 @@ with aba_follow:
         st.divider()
         st.subheader("📏 Medidas corporais")
 
+        st.write("DEBUG IMG:", img, type(img))
+            if isinstance(img, str):
+                st.image(img, use_container_width=True)
+            else:
+                st.warning("URL da imagem inválida")
+                
         with st.expander("Orientações e exemplos"):
             st.markdown(
                 "**Use fita métrica apertando levemente na pele, nas posições indicadas na imagem.**\n\n"
@@ -1877,5 +1877,6 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
