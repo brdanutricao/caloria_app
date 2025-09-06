@@ -15,6 +15,28 @@ from supabase import create_client, Client
 # --- Config da página (faça cedo) ---
 st.set_page_config(page_title="Mini App • Calorias & Macros (v2)", page_icon="🔥", layout="centered")
 
+# --- Verificação silenciosa de config (sem print no UI) ---
+import logging
+import streamlit as st
+
+# Configura logging só no servidor (não aparece pro usuário)
+logger = logging.getLogger("caloria")
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+
+def assert_required_secrets():
+    required = ["supabase_url", "supabase_key"]  # ajuste se tiver mais
+    missing = [k for k in required if not st.secrets.get(k)]
+    if missing:
+        # Mensagem amigável para você (em produção só verá se acessar o app logado como admin)
+        st.error("Configuração do servidor ausente. Contate o suporte.")
+        logger.error("Secrets ausentes: %s", ", ".join(missing))
+        st.stop()
+    else:
+        logger.info("Secrets verificados com sucesso.")
+
+assert_required_secrets()
+
 # Tentativa de importar reportlab (para exportar PDF)
 try:
     from reportlab.lib.pagesizes import A4
@@ -572,9 +594,6 @@ def signed_url(bucket: str, path: str, expires_sec: int = 3600) -> str | None:
 # Estado base --------------------------
 if "sb_session" not in st.session_state:
     st.session_state["sb_session"] = None
-
-# Debug opcional (pode remover depois)
-st.write("Secrets OK?", "SUPABASE_URL" in st.secrets, "SUPABASE_ANON_KEY" in st.secrets)
 
 # Sidebar Login ------------------------
 st.sidebar.header("🔐 Acesso")
@@ -1884,6 +1903,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
