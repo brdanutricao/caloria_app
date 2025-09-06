@@ -37,48 +37,36 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
+# --- DEBUG: Splash forçado (sempre exibe por ~1.2s) ---
+import time
 from pathlib import Path
+import streamlit as st
+
 ASSETS_DIR = Path(__file__).parent / "assets"
 LOGO_PATH = ASSETS_DIR / "logo.png"
 
-# --- Splash simples e estável (1x por sessão, sem rerun) ---
-import time
-import streamlit as st
+ph = st.empty()
+with ph.container():
+    st.markdown(
+        "<div style='height:100vh;display:flex;flex-direction:column;"
+        "align-items:center;justify-content:center;'>",
+        unsafe_allow_html=True
+    )
+    # DEBUG: mostra se o arquivo existe e o caminho
+    st.write("DEBUG splash → Logo exists?", LOGO_PATH.exists(), str(LOGO_PATH))
+    try:
+        st.image(str(LOGO_PATH), width=140)
+    except Exception as e:
+        st.write("DEBUG splash → st.image EXCEPTION:", repr(e))
+        st.markdown("<div style='font-size:1.4rem;'>CalorIA</div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='margin-top:12px;font-size:1.05rem;opacity:.75;'>CalorIA</div></div>",
+        unsafe_allow_html=True
+    )
 
-def show_splash_once():
-    # Reaparecer com ?fresh=1
-    q = dict(st.query_params)
-    if "fresh" in q:
-        st.session_state.pop("_splash_done", None)
-
-    if st.session_state.get("_splash_done"):
-        return
-
-    ph = st.empty()
-    with ph.container():
-        st.markdown(
-            "<div style='height:100vh;display:flex;flex-direction:column;"
-            "align-items:center;justify-content:center;'>",
-            unsafe_allow_html=True
-        )
-        try:
-            # use o caminho já definido no topo:
-            st.write("Logo exists?", LOGO_PATH.exists(), str(LOGO_PATH))
-        except Exception:
-            st.markdown("<div style='font-size:1.4rem;'>CalorIA</div>", unsafe_allow_html=True)
-
-        st.markdown(
-            "<div style='margin-top:12px;font-size:1.05rem;opacity:.75;'>CalorIA</div></div>",
-            unsafe_allow_html=True
-        )
-
-    time.sleep(1.0)                 # Mostra 1s
-    ph.empty()                       # Some com o splash
-    st.session_state["_splash_done"] = True  # Marca como exibido
-    return                            # segue o app normalmente
-
-# >>> CHAME AQUI, ANTES DE QUALQUER OUTRA UI <<<
-show_splash_once()
+time.sleep(1.2)
+ph.empty()
+# --- FIM DEBUG SPLASH ---
 
 # Tentativa de importar reportlab (para exportar PDF)
 try:
@@ -613,7 +601,6 @@ def storage_try_extensions_safe(bucket: str, basename: str, exts=(".jpg", ".jpeg
     return None
 
 from supabase import create_client
-import streamlit as st
 
 sb = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_ANON_KEY"])
 
@@ -1942,6 +1929,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
