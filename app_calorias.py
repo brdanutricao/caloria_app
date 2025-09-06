@@ -37,30 +37,30 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
+from pathlib import Path
+ASSETS_DIR = Path(__file__).parent / "assets"
+LOGO_PATH = ASSETS_DIR / "logo.png"
+
 # --- Splash simples e robusto (1x por sessão) ---
 import time
 import streamlit as st
 
 def show_splash_once():
-    # Força reaparecer com ?fresh=1
     q = dict(st.query_params)
     if "fresh" in q:
         st.session_state.pop("_splash_done", None)
-
-    # Já mostrou nesta sessão?
     if st.session_state.get("_splash_done"):
         return
 
     ph = st.empty()
     with ph.container():
-        # Container centralizado sem CSS multilinha (evita SyntaxError ao colar)
         st.markdown(
             "<div style='height:100vh;display:flex;flex-direction:column;"
             "align-items:center;justify-content:center;'>",
             unsafe_allow_html=True
         )
         try:
-            st.image("assets/logo.png", width=140)
+            st.image("assets/logo.png", width=140)  # veja observação do caminho abaixo
         except Exception:
             st.markdown("<div>CalorIA</div>", unsafe_allow_html=True)
         st.markdown(
@@ -68,10 +68,14 @@ def show_splash_once():
             unsafe_allow_html=True
         )
 
-    time.sleep(1.0)
+    import time as _t
+    _t.sleep(1.0)
     st.session_state["_splash_done"] = True
     ph.empty()
-    st.rerun()  # API nova (substitui experimental_rerun)
+    st.rerun()
+
+# >>> CHAME AQUI, ANTES DE QUALQUER OUTRA UI <<<
+show_splash_once()
 
 # Tentativa de importar reportlab (para exportar PDF)
 try:
@@ -1939,6 +1943,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
