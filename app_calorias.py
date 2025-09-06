@@ -63,7 +63,7 @@ def show_splash_once():
         )
         try:
             # use o caminho já definido no topo:
-            st.image(str(LOGO_PATH), width=140)
+            st.write("Logo exists?", LOGO_PATH.exists(), str(LOGO_PATH))
         except Exception:
             st.markdown("<div style='font-size:1.4rem;'>CalorIA</div>", unsafe_allow_html=True)
 
@@ -1942,6 +1942,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
