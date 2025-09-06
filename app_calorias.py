@@ -41,14 +41,16 @@ from pathlib import Path
 ASSETS_DIR = Path(__file__).parent / "assets"
 LOGO_PATH = ASSETS_DIR / "logo.png"
 
-# --- Splash simples e robusto (1x por sessão) ---
+# --- Splash simples e estável (1x por sessão, sem rerun) ---
 import time
 import streamlit as st
 
 def show_splash_once():
+    # Reaparecer com ?fresh=1
     q = dict(st.query_params)
     if "fresh" in q:
         st.session_state.pop("_splash_done", None)
+
     if st.session_state.get("_splash_done"):
         return
 
@@ -60,19 +62,20 @@ def show_splash_once():
             unsafe_allow_html=True
         )
         try:
-            st.image("assets/logo.png", width=140)  # veja observação do caminho abaixo
+            # use o caminho já definido no topo:
+            st.image(str(LOGO_PATH), width=140)
         except Exception:
-            st.markdown("<div>CalorIA</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:1.4rem;'>CalorIA</div>", unsafe_allow_html=True)
+
         st.markdown(
-            "<div style='margin-top:12px;font-size:1.1rem;opacity:.75;'>CalorIA</div></div>",
+            "<div style='margin-top:12px;font-size:1.05rem;opacity:.75;'>CalorIA</div></div>",
             unsafe_allow_html=True
         )
 
-    import time as _t
-    _t.sleep(1.0)
-    st.session_state["_splash_done"] = True
-    ph.empty()
-    st.rerun()
+    time.sleep(1.0)                 # Mostra 1s
+    ph.empty()                       # Some com o splash
+    st.session_state["_splash_done"] = True  # Marca como exibido
+    return                            # segue o app normalmente
 
 # >>> CHAME AQUI, ANTES DE QUALQUER OUTRA UI <<<
 show_splash_once()
@@ -93,10 +96,6 @@ def get_supabase_client() -> Client:
     return create_client(url, key)
 
 supabase = get_supabase_client()
-
-from pathlib import Path
-
-ASSETS_DIR = Path(__file__).parent / "assets"
 
 def storage_public_url(bucket: str, path: str | None) -> str | None:
     """Retorna a URL pública (string) ou None, independente do formato do SDK."""
@@ -1943,6 +1942,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
