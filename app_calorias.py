@@ -37,13 +37,13 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
-# --- Splash que aparece 1x por sessão e força rerun ---
+# --- Splash que aparece 1x por sessão e força rerun (APIs novas) ---
 import time
 import streamlit as st
 
 def show_splash_once():
     # 1) Se URL tiver ?fresh=1, reseta o splash
-    q = st.experimental_get_query_params()
+    q = dict(st.query_params)  # novo: st.query_params
     if "fresh" in q:
         st.session_state.pop("_splash_done", None)
 
@@ -69,24 +69,16 @@ def show_splash_once():
                 font-size: 1.1rem;
                 opacity: .75;
               }
-              /* Evita barra lateral abrir automaticamente antes do splash */
+              /* Evita barra lateral antes do splash */
               section[data-testid="stSidebar"] { display: none; }
             </style>
             """,
             unsafe_allow_html=True
         )
-        st.markdown('<div class="splash-wrap">', unsafe_allow_html=True)
-        st.image("assets/logo.png", width=140)
-        st.markdown('<div class="splash-name">CalorIA</div></div>', unsafe_allow_html=True)
-
-    # 4) Mostra por 1 segundo, marca flag e rerun
-    time.sleep(1.0)
-    st.session_state["_splash_done"] = True
-    splash.empty()
-    st.experimental_rerun()
-
-# >>> CHAME AQUI, ANTES de qualquer outra UI <<<
-show_splash_once()
+        try:
+            st.markdown('<div class="splash-wrap">', unsafe_allow_html=True)
+            st.image("assets/logo.png", width=140)
+            st.markdown('<div class="splash-name">CalorIA</div></div>', un
 
 # Tentativa de importar reportlab (para exportar PDF)
 try:
@@ -1954,6 +1946,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
