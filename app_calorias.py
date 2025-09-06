@@ -25,7 +25,7 @@ if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
 
 def assert_required_secrets():
-    required = ["supabase_url", "supabase_key"]  # ajuste se tiver mais
+    required = ["SUPABASE_URL", "SUPABASE_ANON_KEY"]  # ajuste se tiver mais
     missing = [k for k in required if not st.secrets.get(k)]
     if missing:
         # Mensagem amigável para você (em produção só verá se acessar o app logado como admin)
@@ -1903,6 +1903,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
