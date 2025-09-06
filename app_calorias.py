@@ -78,7 +78,16 @@ def show_splash_once():
         try:
             st.markdown('<div class="splash-wrap">', unsafe_allow_html=True)
             st.image("assets/logo.png", width=140)
-            st.markdown('<div class="splash-name">CalorIA</div></div>', un
+            st.markdown('<div class="splash-name">CalorIA</div></div>', unsafe_allow_html=True)
+
+    # 4) Mostra por 1 segundo, marca flag e rerun
+    time.sleep(1.0)
+    st.session_state["_splash_done"] = True
+    splash.empty()
+    st.rerun()  # novo: st.rerun()
+
+# >>> CHAME AQUI, ANTES de qualquer outra UI <<<
+show_splash_once()
 
 # Tentativa de importar reportlab (para exportar PDF)
 try:
@@ -1946,6 +1955,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
