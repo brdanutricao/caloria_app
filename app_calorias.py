@@ -36,55 +36,47 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
-# --- DEBUG: Splash overlay com fundo sólido e contraste ---
+# --- Splash limpo (1x por sessão) ---
 import time
 from pathlib import Path
-import streamlit as st
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 LOGO_PATH = ASSETS_DIR / "logo.png"
 
-overlay = st.empty()
-with overlay.container():
-    st.markdown(
-        """
-        <style>
-        /* Overlay de tela cheia por cima de tudo */
-        .caloria-splash-overlay {
-          position: fixed; 
-          inset: 0; 
-          z-index: 9999; 
-          background: #ffffff; /* fundo branco (mude p/ #0f172a p/ fundo escuro) */
-          display: flex; 
-          flex-direction: column; 
-          align-items: center; 
-          justify-content: center;
-        }
-        .caloria-splash-title {
-          margin-top: 12px; 
-          font-size: 1.15rem; 
-          color: #111827; /* texto escuro para fundo claro */
-          opacity: .9;
-        }
-        </style>
-        <div class="caloria-splash-overlay">
-          <div id="caloria-splash-content"></div>
-          <div class="caloria-splash-title">CalorIA</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    # Tenta logo; se falhar, escreve debug visível
-    try:
-        st.image(str(LOGO_PATH), width=160)
-        st.write("DEBUG → Logo path:", str(LOGO_PATH), "| exists:", LOGO_PATH.exists())
-    except Exception as e:
-        st.write("DEBUG → st.image EXCEPTION:", repr(e))
-        st.write("DEBUG → Logo path:", str(LOGO_PATH), "| exists:", LOGO_PATH.exists())
+def splash_once():
+    if st.session_state.get("_splash_done"):
+        return
+    ph = st.empty()
+    with ph.container():
+        st.markdown(
+            """
+            <style>
+            .caloria-splash {
+              position: fixed; inset: 0; z-index: 9999;
+              background: #ffffff; /* fundo branco */
+              display:flex; flex-direction:column; align-items:center; justify-content:center;
+            }
+            .caloria-splash-title {
+              margin-top: 10px; font-size: 1.1rem; color: #111827; opacity:.95;
+            }
+            </style>
+            <div class="caloria-splash">
+              <div id="caloria-splash"></div>
+              <div class="caloria-splash-title">CalorIA</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        try:
+            st.image(str(LOGO_PATH), width=160)
+        except:
+            pass
+    time.sleep(1.0)
+    ph.empty()
+    st.session_state["_splash_done"] = True
 
-time.sleep(2.0)  # 2s p/ você conseguir ver com calma
-overlay.empty()
-# --- FIM DEBUG SPLASH ---
+# Chame logo após assert_required_secrets() e antes de QUALQUER UI
+splash_once()
 
 # Tentativa de importar reportlab (para exportar PDF)
 try:
@@ -399,8 +391,6 @@ if not st.session_state.get("sb_session"):
             cookies.pop("sb_access_token")
             cookies.pop("saved_email")
             cookies.save()
-
-from pathlib import Path
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -1624,8 +1614,6 @@ with aba_follow:
         # ... insert no Supabase e listagem da tabela aqui ...
 
         # -------- ORIENTAÇÕES + EXEMPLOS (fica DENTRO da aba_follow) --------
-        from pathlib import Path
-
         ASSETS_DIR = Path(__file__).parent / "assets"
 
         def img_path(basename: str):
@@ -1946,6 +1934,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
