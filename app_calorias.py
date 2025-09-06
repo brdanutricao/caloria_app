@@ -17,7 +17,6 @@ st.set_page_config(page_title="Mini App • Calorias & Macros (v2)", page_icon="
 
 # --- Verificação silenciosa de config (sem print no UI) ---
 import logging
-import streamlit as st
 
 # Configura logging só no servidor (não aparece pro usuário)
 logger = logging.getLogger("caloria")
@@ -37,7 +36,7 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
-# --- DEBUG: Splash forçado (sempre exibe por ~1.2s) ---
+# --- DEBUG: Splash overlay com fundo sólido e contraste ---
 import time
 from pathlib import Path
 import streamlit as st
@@ -45,27 +44,46 @@ import streamlit as st
 ASSETS_DIR = Path(__file__).parent / "assets"
 LOGO_PATH = ASSETS_DIR / "logo.png"
 
-ph = st.empty()
-with ph.container():
+overlay = st.empty()
+with overlay.container():
     st.markdown(
-        "<div style='height:100vh;display:flex;flex-direction:column;"
-        "align-items:center;justify-content:center;'>",
+        """
+        <style>
+        /* Overlay de tela cheia por cima de tudo */
+        .caloria-splash-overlay {
+          position: fixed; 
+          inset: 0; 
+          z-index: 9999; 
+          background: #ffffff; /* fundo branco (mude p/ #0f172a p/ fundo escuro) */
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          justify-content: center;
+        }
+        .caloria-splash-title {
+          margin-top: 12px; 
+          font-size: 1.15rem; 
+          color: #111827; /* texto escuro para fundo claro */
+          opacity: .9;
+        }
+        </style>
+        <div class="caloria-splash-overlay">
+          <div id="caloria-splash-content"></div>
+          <div class="caloria-splash-title">CalorIA</div>
+        </div>
+        """,
         unsafe_allow_html=True
     )
-    # DEBUG: mostra se o arquivo existe e o caminho
-    st.write("DEBUG splash → Logo exists?", LOGO_PATH.exists(), str(LOGO_PATH))
+    # Tenta logo; se falhar, escreve debug visível
     try:
-        st.image(str(LOGO_PATH), width=140)
+        st.image(str(LOGO_PATH), width=160)
+        st.write("DEBUG → Logo path:", str(LOGO_PATH), "| exists:", LOGO_PATH.exists())
     except Exception as e:
-        st.write("DEBUG splash → st.image EXCEPTION:", repr(e))
-        st.markdown("<div style='font-size:1.4rem;'>CalorIA</div>", unsafe_allow_html=True)
-    st.markdown(
-        "<div style='margin-top:12px;font-size:1.05rem;opacity:.75;'>CalorIA</div></div>",
-        unsafe_allow_html=True
-    )
+        st.write("DEBUG → st.image EXCEPTION:", repr(e))
+        st.write("DEBUG → Logo path:", str(LOGO_PATH), "| exists:", LOGO_PATH.exists())
 
-time.sleep(1.2)
-ph.empty()
+time.sleep(2.0)  # 2s p/ você conseguir ver com calma
+overlay.empty()
 # --- FIM DEBUG SPLASH ---
 
 # Tentativa de importar reportlab (para exportar PDF)
@@ -128,7 +146,6 @@ def _show_image(url: str | None, caption: str | None = None):
 import math
 from datetime import date
 import pandas as pd
-import streamlit as st
 
 def _fator_atividade(txt: str) -> float:
     return {
@@ -1929,6 +1946,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
