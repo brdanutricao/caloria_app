@@ -37,57 +37,41 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
-# --- Splash que aparece 1x por sessão e força rerun (APIs novas) ---
+# --- Splash simples e robusto (1x por sessão) ---
 import time
 import streamlit as st
 
 def show_splash_once():
-    # 1) Se URL tiver ?fresh=1, reseta o splash
-    q = dict(st.query_params)  # novo: st.query_params
+    # Força reaparecer com ?fresh=1
+    q = dict(st.query_params)
     if "fresh" in q:
         st.session_state.pop("_splash_done", None)
 
-    # 2) Se já foi exibido nesta sessão, sai
+    # Já mostrou nesta sessão?
     if st.session_state.get("_splash_done"):
         return
 
-    # 3) Desenha o splash em tela cheia
-    splash = st.empty()
-    with splash.container():
+    ph = st.empty()
+    with ph.container():
+        # Container centralizado sem CSS multilinha (evita SyntaxError ao colar)
         st.markdown(
-            """
-            <style>
-              .splash-wrap {
-                height: 100vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-              }
-              .splash-name {
-                margin-top: .75rem;
-                font-size: 1.1rem;
-                opacity: .75;
-              }
-              /* Evita barra lateral antes do splash */
-              section[data-testid="stSidebar"] { display: none; }
-            </style>
-            """,
+            "<div style='height:100vh;display:flex;flex-direction:column;"
+            "align-items:center;justify-content:center;'>",
             unsafe_allow_html=True
         )
         try:
-            st.markdown('<div class="splash-wrap">', unsafe_allow_html=True)
             st.image("assets/logo.png", width=140)
-            st.markdown('<div class="splash-name">CalorIA</div></div>', unsafe_allow_html=True)
+        except Exception:
+            st.markdown("<div>CalorIA</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div style='margin-top:12px;font-size:1.1rem;opacity:.75;'>CalorIA</div></div>",
+            unsafe_allow_html=True
+        )
 
-    # 4) Mostra por 1 segundo, marca flag e rerun
     time.sleep(1.0)
     st.session_state["_splash_done"] = True
-    splash.empty()
-    st.rerun()  # novo: st.rerun()
-
-# >>> CHAME AQUI, ANTES de qualquer outra UI <<<
-show_splash_once()
+    ph.empty()
+    st.rerun()  # API nova (substitui experimental_rerun)
 
 # Tentativa de importar reportlab (para exportar PDF)
 try:
@@ -1955,6 +1939,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
