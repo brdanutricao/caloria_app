@@ -37,6 +37,47 @@ def assert_required_secrets():
 
 assert_required_secrets()
 
+# --- Splash (mostra uma única vez por sessão) ---
+import time
+import streamlit as st
+
+def show_splash_once():
+    if st.session_state.get("_splash_done"):
+        return  # já mostramos nesta sessão
+
+    splash = st.empty()
+    with splash.container():
+        st.markdown(
+            """
+            <style>
+              .splash-wrap {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              }
+              .splash-name {
+                margin-top: .75rem;
+                font-size: 1.1rem;
+                opacity: .75;
+              }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        st.markdown('<div class="splash-wrap">', unsafe_allow_html=True)
+        st.image("assets/logo.png", width=140)  # troque o caminho/nome se precisar
+        st.markdown('<div class="splash-name">CalorIA</div></div>', unsafe_allow_html=True)
+
+    # pequena pausa opcional (estética). pode reduzir para 0.6–1.0s
+    time.sleep(1.0)
+
+    splash.empty()
+    st.session_state["_splash_done"] = True
+
+show_splash_once()
+
 # Tentativa de importar reportlab (para exportar PDF)
 try:
     from reportlab.lib.pagesizes import A4
@@ -1903,6 +1944,7 @@ with aba_plano:
         st.info(
             "Preencha os dados e clique em **Calcular** para ver resultados e liberar a exportação em PDF."
         )
+
 
 
 
